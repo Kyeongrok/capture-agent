@@ -1,0 +1,14 @@
+﻿<Window
+    x:Class="CaptureAgent.Forms.UI.Views.ScreenOverlayWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    AllowsTransparency="True"
+    Background="Transparent"
+    Topmost="True"
+    WindowState="Maximized"
+    WindowStyle="None">
+    <Grid>
+        <Border Background="#3E080906" />
+        <Canvas x:Name="SelectionCanvas" Background="Transparent" />
+    </Grid>
+</Window>
