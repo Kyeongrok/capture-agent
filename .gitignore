@@ -1,0 +1,20 @@
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# Build
+bin/
+obj/
+*.dll
+*.exe
+
+# User-specific
+*.suo
+*.user
+*.userprefs
+*.sln.iml
+
+# OS
+.DS_Store
+Thumbs.db
