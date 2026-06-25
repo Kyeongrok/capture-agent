@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using CaptureAgent.Forms.ViewModels;
 using Rectangle = System.Windows.Shapes.Rectangle;
 using Point = System.Windows.Point;
 
@@ -15,14 +17,19 @@ public partial class ResizableRegionWindow : Window
     private Border? _controlBar;
     private TextBlock? _dimensionDisplay;
     private TextBlock? _filePathDisplay;
-    private Rectangle? _handle;
     private HandlePosition _draggedHandle = HandlePosition.None;
     private Point _dragStart;
     private List<(HandlePosition pos, Rectangle handle)> _resizeHandles = new();
 
+    // 메인 윈도우와 좌표를 공유하기 위한 ViewModel (DI 싱글톤). 이동/리사이즈 시 여기에 반영한다.
+    private readonly RegionViewModel? _regionViewModel;
+
+    // 자기 자신이 ViewModel을 갱신하는 동안 들어오는 PropertyChanged를 무시하기 위한 가드.
+    private bool _isSyncing;
+
     private enum HandlePosition { None, TopLeft, TopRight, BottomLeft, BottomRight, Top, Bottom, Left, Right }
 
-    public ResizableRegionWindow(int x, int y, int width, int height)
+    public ResizableRegionWindow(int x, int y, int width, int height, RegionViewModel? regionViewModel = null)
     {
         InitializeComponent();
 
@@ -30,8 +37,66 @@ public partial class ResizableRegionWindow : Window
         _regionY = y;
         _regionWidth = width;
         _regionHeight = height;
+        _regionViewModel = regionViewModel;
 
         Loaded += (s, e) => SetupRegion();
+    }
+
+    /// <summary>
+    /// 현재 영역(DIP)을 물리 픽셀 Rectangle로 변환한다.
+    /// 각 꼭짓점을 PointToScreen으로 변환해 모니터별 DPI를 정확히 반영한다.
+    /// </summary>
+    private System.Drawing.Rectangle GetPhysicalRegion()
+    {
+        // 아직 화면에 연결되지 않았으면 DIP 값을 그대로 사용 (PointToScreen 불가).
+        if (PresentationSource.FromVisual(this) == null)
+            return new System.Drawing.Rectangle(_regionX, _regionY, Math.Max(1, _regionWidth), Math.Max(1, _regionHeight));
+
+        Point tl = PointToScreen(new Point(_regionX, _regionY));
+        Point br = PointToScreen(new Point(_regionX + _regionWidth, _regionY + _regionHeight));
+        int x = (int)Math.Round(tl.X);
+        int y = (int)Math.Round(tl.Y);
+        int w = Math.Max(1, (int)Math.Round(br.X - tl.X));
+        int h = Math.Max(1, (int)Math.Round(br.Y - tl.Y));
+        return new System.Drawing.Rectangle(x, y, w, h);
+    }
+
+    /// <summary>
+    /// 현재 영역을 메인 윈도우의 RegionViewModel에 반영한다 (물리 픽셀 기준).
+    /// 자기 자신이 일으킨 변경을 다시 받아 처리하지 않도록 _isSyncing 가드를 건다.
+    /// </summary>
+    private void SyncToViewModel()
+    {
+        if (_regionViewModel == null) return;
+        _isSyncing = true;
+        try
+        {
+            _regionViewModel.SetRegion(GetPhysicalRegion());
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+    }
+
+    /// <summary>
+    /// 메인 윈도우에서 좌표를 입력해 RegionViewModel이 바뀌면 프레임을 다시 그린다.
+    /// (물리 픽셀 → DIP 변환 후 RedrawRegion. ViewModel로 되돌려 push 하지 않아 루프가 없다.)
+    /// </summary>
+    private void OnRegionViewModelChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (_isSyncing || _regionViewModel == null) return;
+        if (PresentationSource.FromVisual(this) == null) return;
+
+        var r = _regionViewModel.GetRegion(); // 물리 픽셀
+        Point dipTopLeft = PointFromScreen(new Point(r.X, r.Y));
+        Point dipBottomRight = PointFromScreen(new Point(r.X + r.Width, r.Y + r.Height));
+        _regionX = (int)Math.Round(dipTopLeft.X);
+        _regionY = (int)Math.Round(dipTopLeft.Y);
+        _regionWidth = Math.Max(1, (int)Math.Round(dipBottomRight.X - dipTopLeft.X));
+        _regionHeight = Math.Max(1, (int)Math.Round(dipBottomRight.Y - dipTopLeft.Y));
+
+        RedrawRegion();
     }
 
     private void SetupRegion()
@@ -65,6 +130,16 @@ public partial class ResizableRegionWindow : Window
 
         // 치수 텍스트
         UpdateDimensionDisplay();
+
+        // 초기 영역을 메인 윈도우에 동기화
+        SyncToViewModel();
+
+        // 메인 윈도우 좌표 입력 → 프레임 갱신 (역방향 동기화) 구독
+        if (_regionViewModel != null)
+        {
+            _regionViewModel.PropertyChanged += OnRegionViewModelChanged;
+            Closed += (s, e) => _regionViewModel.PropertyChanged -= OnRegionViewModelChanged;
+        }
 
         // 리사이즈 핸들 추가
         AddResizeHandles(canvas);
@@ -188,7 +263,16 @@ public partial class ResizableRegionWindow : Window
         UpdateDisplay();
     }
 
+    // 내부 조작(드래그/리사이즈) 시: 프레임을 다시 그리고 그 결과를 메인 윈도우에 반영.
     private void UpdateDisplay()
+    {
+        RedrawRegion();
+        SyncToViewModel();
+    }
+
+    // 프레임/컨트롤바/핸들/치수만 다시 그린다 (ViewModel로 push 하지 않음).
+    // 메인 윈도우에서 좌표를 입력해 들어온 변경에도 이 메서드만 호출한다 (피드백 루프 방지).
+    private void RedrawRegion()
     {
         if (_regionFrame == null || _controlBar == null) return;
 
@@ -243,7 +327,11 @@ public partial class ResizableRegionWindow : Window
     private void UpdateDimensionDisplay()
     {
         if (_dimensionDisplay != null)
-            _dimensionDisplay.Text = $"{Math.Max(1, _regionWidth)} × {Math.Max(1, _regionHeight)}";
+        {
+            // 실제 캡처되는 물리 픽셀 크기를 표시한다 (메인 윈도우 표시와 일치).
+            var r = GetPhysicalRegion();
+            _dimensionDisplay.Text = $"{r.Width} × {r.Height}";
+        }
     }
 
     private Cursor GetCursorForHandle(HandlePosition handle) => handle switch
@@ -285,38 +373,54 @@ public partial class ResizableRegionWindow : Window
         _controlBar?.ReleaseMouseCapture();
     }
 
-    private void CaptureButton_Click(object sender, RoutedEventArgs e)
+    private async void CaptureButton_Click(object sender, RoutedEventArgs e)
     {
         try
         {
+            // 영역(DIP)을 물리 픽셀로 변환 (창이 보이는 상태에서 미리 계산해 둔다).
+            var region = GetPhysicalRegion();
+            int physX = region.X;
+            int physY = region.Y;
+            int physWidth = region.Width;
+            int physHeight = region.Height;
+
+            // 오버레이(프레임/핸들/컨트롤바)가 캡처에 찍히지 않도록 잠시 숨긴 뒤,
+            // 바탕화면이 다시 그려질 시간을 준다.
+            Visibility = Visibility.Hidden;
+            await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(80);
+
             // 선택된 영역을 캡처
-            using (var bitmap = new System.Drawing.Bitmap(_regionWidth, _regionHeight))
+            string fileName;
+            using (var bitmap = new System.Drawing.Bitmap(physWidth, physHeight))
             {
                 using (var g = System.Drawing.Graphics.FromImage(bitmap))
                 {
-                    g.CopyFromScreen(_regionX, _regionY, 0, 0, new System.Drawing.Size(_regionWidth, _regionHeight));
+                    g.CopyFromScreen(physX, physY, 0, 0, new System.Drawing.Size(physWidth, physHeight));
                 }
 
                 // 파일 저장
                 var timestamp = System.DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"capture_{timestamp}.png";
+                fileName = $"capture_{timestamp}.png";
                 var desktopPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop);
                 var filePath = System.IO.Path.Combine(desktopPath, fileName);
 
                 bitmap.Save(filePath, System.Drawing.Imaging.ImageFormat.Png);
-
-                // 저장 경로 UI에 표시
-                if (_filePathDisplay != null)
-                {
-                    _filePathDisplay.Text = $"저장됨: {fileName}";
-                    _filePathDisplay.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(76, 175, 80)); // 초록색
-                }
-
                 System.Diagnostics.Debug.WriteLine($"캡춰 저장됨: {filePath}");
+            }
+
+            // 오버레이를 다시 표시하고 저장 결과를 알린다.
+            Visibility = Visibility.Visible;
+            if (_filePathDisplay != null)
+            {
+                _filePathDisplay.Text = $"저장됨: {fileName}";
+                _filePathDisplay.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(76, 175, 80)); // 초록색
             }
         }
         catch (System.Exception ex)
         {
+            // 예외가 나도 숨긴 오버레이는 반드시 복원한다.
+            Visibility = Visibility.Visible;
             if (_filePathDisplay != null)
             {
                 _filePathDisplay.Text = $"오류: {ex.Message}";

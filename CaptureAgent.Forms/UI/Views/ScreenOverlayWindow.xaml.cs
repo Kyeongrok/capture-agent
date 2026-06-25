@@ -103,31 +103,31 @@ public partial class ScreenOverlayWindow : Window
         // 선택 완료 - 오버레이2 (ResizableRegionWindow) 띄우기
         if (_selectionRectangle?.Width > 0 && _selectionRectangle?.Height > 0)
         {
-            // DPI 배율 고려한 좌표 계산
+            // 모든 좌표를 DIP(논리 단위)로 통일.
+            // x, y: PointToScreen은 물리 픽셀을 주므로 dpiScale로 나눠 DIP로 변환.
+            // width, height: 이미 DIP 단위이므로 변환하지 않는다.
             double dpiScale = GetDpiScale();
             Point screenPos = PointToScreen(new Point(Canvas.GetLeft(_selectionRectangle), Canvas.GetTop(_selectionRectangle)));
             int x = (int)(screenPos.X / dpiScale);
             int y = (int)(screenPos.Y / dpiScale);
-            int width = (int)(_selectionRectangle.Width / dpiScale);
-            int height = (int)(_selectionRectangle.Height / dpiScale);
+            int width = (int)_selectionRectangle.Width;
+            int height = (int)_selectionRectangle.Height;
 
-            // 오버레이2 생성 및 표시
-            var resizableWindow = new ResizableRegionWindow(x, y, width, height);
-            resizableWindow.Show();
-
-            // 메인 윈도우에 좌표 업데이트
+            // 메인 윈도우의 RegionViewModel을 찾아 오버레이2에 전달한다.
+            // 좌표 동기화는 오버레이2(ResizableRegionWindow)가 전담한다.
+            RegionViewModel? regionViewModel = null;
             foreach (Window window in Application.Current.Windows)
             {
                 if (window is MainWindow mainWindow && mainWindow.DataContext is MainWindowViewModel viewModel)
                 {
-                    if (viewModel.RegionViewModel is not null)
-                    {
-                        var region = new System.Drawing.Rectangle(x, y, width, height);
-                        viewModel.RegionViewModel.SetRegion(region);
-                    }
+                    regionViewModel = viewModel.RegionViewModel;
                     break;
                 }
             }
+
+            // 오버레이2 생성 및 표시
+            var resizableWindow = new ResizableRegionWindow(x, y, width, height, regionViewModel);
+            resizableWindow.Show();
 
             Close();
         }

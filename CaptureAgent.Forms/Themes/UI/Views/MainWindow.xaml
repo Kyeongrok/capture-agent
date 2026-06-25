@@ -3,12 +3,26 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:support="clr-namespace:CaptureAgent.Support.UI.Units;assembly=CaptureAgent.Support"
     xmlns:views="clr-namespace:CaptureAgent.Forms.UI.Views">
+
+    <!--  좌표 입력칸 공통 스타일 (다크 테마에 맞춘 투명 TextBox)  -->
+    <Style x:Key="CoordBoxStyle" TargetType="TextBox">
+        <Setter Property="HorizontalContentAlignment" Value="Right" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="FontFamily" Value="Consolas" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="#F0F0F2" />
+        <Setter Property="CaretBrush" Value="#F0F0F2" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0,0,6,0" />
+    </Style>
+
     <Style BasedOn="{StaticResource {x:Type support:CaptureAgentWindow}}" TargetType="{x:Type views:MainWindow}">
         <Setter Property="Title" Value="캡춰앱" />
-        <Setter Property="Width" Value="1300" />
-        <Setter Property="Height" Value="600" />
-        <Setter Property="MinWidth" Value="1100" />
-        <Setter Property="MinHeight" Value="500" />
+        <Setter Property="Width" Value="700" />
+        <Setter Property="Height" Value="400" />
+        <Setter Property="MinWidth" Value="700" />
+        <Setter Property="MinHeight" Value="400" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="Content">
             <Setter.Value>
@@ -267,14 +281,7 @@
                                 Background="#202024"
                                 BorderBrush="#F2A33C"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="150" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.StartX, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,6,0"
@@ -290,14 +297,7 @@
                                 Background="#202024"
                                 BorderBrush="#555"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="110" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.StartY, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,12,0"
@@ -328,14 +328,7 @@
                                 Background="#202024"
                                 BorderBrush="#555"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="1453" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.EndX, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,6,0"
@@ -351,14 +344,7 @@
                                 Background="#202024"
                                 BorderBrush="#555"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="720" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.EndY, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,12,0"
@@ -389,14 +375,7 @@
                                 Background="#202024"
                                 BorderBrush="#555"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="1303" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.Width, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,6,0"
@@ -411,14 +390,7 @@
                                 Background="#202024"
                                 BorderBrush="#555"
                                 BorderThickness="1">
-                                <TextBlock
-                                    Margin="0,0,6,0"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    FontFamily="Consolas"
-                                    FontSize="12"
-                                    Foreground="#F0F0F2"
-                                    Text="610" />
+                                <TextBox Style="{StaticResource CoordBoxStyle}" Text="{Binding RegionViewModel.Height, UpdateSourceTrigger=LostFocus}" />
                             </Border>
                             <TextBlock
                                 Margin="0,0,0,0"
@@ -466,8 +438,14 @@
                                 FontFamily="Consolas"
                                 FontSize="13"
                                 FontWeight="600"
-                                Foreground="#F2A33C"
-                                Text="1303 × 610" />
+                                Foreground="#F2A33C">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0} × {1}">
+                                        <Binding Path="RegionViewModel.Width" />
+                                        <Binding Path="RegionViewModel.Height" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
                         </Grid>
                     </Border>
                 </Grid>
