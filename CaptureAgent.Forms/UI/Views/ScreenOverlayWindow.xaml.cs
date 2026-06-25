@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using CaptureAgent.Forms.ViewModels;
+using System.Windows.Media.Imaging;
 
 namespace CaptureAgent.Forms.UI.Views;
 
@@ -20,6 +21,12 @@ public partial class ScreenOverlayWindow : Window
 
         Cursor = Cursors.Cross;
         Loaded += (s, e) => SetupSelection();
+    }
+
+    private double GetDpiScale()
+    {
+        var source = PresentationSource.FromVisual(this);
+        return source?.CompositionTarget?.TransformToDevice.M11 ?? 1.0;
     }
 
     private void SetupSelection()
@@ -96,12 +103,13 @@ public partial class ScreenOverlayWindow : Window
         // 선택 완료 - 오버레이2 (ResizableRegionWindow) 띄우기
         if (_selectionRectangle?.Width > 0 && _selectionRectangle?.Height > 0)
         {
-            // 화면 기준 좌표 계산
+            // DPI 배율 고려한 좌표 계산
+            double dpiScale = GetDpiScale();
             Point screenPos = PointToScreen(new Point(Canvas.GetLeft(_selectionRectangle), Canvas.GetTop(_selectionRectangle)));
-            int x = (int)screenPos.X;
-            int y = (int)screenPos.Y;
-            int width = (int)_selectionRectangle.Width;
-            int height = (int)_selectionRectangle.Height;
+            int x = (int)(screenPos.X / dpiScale);
+            int y = (int)(screenPos.Y / dpiScale);
+            int width = (int)(_selectionRectangle.Width / dpiScale);
+            int height = (int)(_selectionRectangle.Height / dpiScale);
 
             // 오버레이2 생성 및 표시
             var resizableWindow = new ResizableRegionWindow(x, y, width, height);

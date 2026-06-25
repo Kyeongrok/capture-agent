@@ -5,10 +5,10 @@
     xmlns:views="clr-namespace:CaptureAgent.Forms.UI.Views">
     <Style BasedOn="{StaticResource {x:Type support:CaptureAgentWindow}}" TargetType="{x:Type views:MainWindow}">
         <Setter Property="Title" Value="캡춰앱" />
-        <Setter Property="Width" Value="1120" />
-        <Setter Property="Height" Value="500" />
-        <Setter Property="MinWidth" Value="1000" />
-        <Setter Property="MinHeight" Value="450" />
+        <Setter Property="Width" Value="1300" />
+        <Setter Property="Height" Value="600" />
+        <Setter Property="MinWidth" Value="1100" />
+        <Setter Property="MinHeight" Value="500" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="Content">
             <Setter.Value>
