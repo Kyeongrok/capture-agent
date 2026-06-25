@@ -157,12 +157,14 @@ public partial class ResizableRegionWindow : Window
         if (_controlBar?.Child is StackPanel stackPanel)
         {
             var buttons = stackPanel.Children.OfType<Button>().ToList();
-            if (buttons.Count >= 2)
+            if (buttons.Count >= 3)
             {
                 // 캡춰 버튼 (첫 번째)
                 buttons[0].Click += CaptureButton_Click;
-                // 닫기 버튼 (두 번째)
-                buttons[1].Click += (s, e) => Close();
+                // 매크로 버튼 (두 번째)
+                buttons[1].Click += MacroButton_Click;
+                // 닫기 버튼 (세 번째)
+                buttons[2].Click += (s, e) => Close();
             }
         }
     }
@@ -375,6 +377,11 @@ public partial class ResizableRegionWindow : Window
 
     private async void CaptureButton_Click(object sender, RoutedEventArgs e)
     {
+        await PerformCaptureAsync();
+    }
+
+    private async Task PerformCaptureAsync()
+    {
         try
         {
             // 영역(DIP)을 물리 픽셀로 변환 (창이 보이는 상태에서 미리 계산해 둔다).
@@ -427,6 +434,56 @@ public partial class ResizableRegionWindow : Window
                 _filePathDisplay.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(244, 67, 54)); // 빨간색
             }
             System.Diagnostics.Debug.WriteLine($"캡춰 오류: {ex.Message}");
+        }
+    }
+
+    // 매크로 버튼: 마우스 위치/딜레이 지정 창을 띄운다.
+    // 창은 고정 위치로 떠 있고, "실행" 시 닫히지 않은 채 [좌표 클릭 → 딜레이 대기 → 캡춰] 만 수행한다.
+    private void MacroButton_Click(object sender, RoutedEventArgs e)
+    {
+        var macroWindow = new MacroConfigWindow();
+        macroWindow.RunRequested += async (s, args) => await RunMacroAsync(macroWindow);
+        macroWindow.Show();
+    }
+
+    private async Task RunMacroAsync(MacroConfigWindow macroWindow)
+    {
+        var token = macroWindow.RunToken;
+        try
+        {
+            var mouseService = AppServices.GetRequired<CaptureAgent.Main.PInvoke.IMouseInteropService>();
+            int total = macroWindow.RepeatCount;
+
+            for (int i = 1; i <= total; i++)
+            {
+                token.ThrowIfCancellationRequested();
+                macroWindow.SetStatus($"실행 중... ({i}/{total})");
+
+                // 1) 설정된 좌표 클릭
+                mouseService.ClickMouse(macroWindow.PositionX, macroWindow.PositionY, 100);
+
+                // 2) 딜레이만큼 대기
+                await Task.Delay((int)(macroWindow.DelaySeconds * 1000), token);
+
+                // 3) 캡춰 트리거
+                await PerformCaptureAsync();
+            }
+
+            macroWindow.SetStatus($"완료 ({total}회)");
+        }
+        catch (System.OperationCanceledException)
+        {
+            macroWindow.SetStatus("중지됨");
+        }
+        catch (System.Exception ex)
+        {
+            macroWindow.SetStatus($"오류: {ex.Message}", isError: true);
+            System.Diagnostics.Debug.WriteLine($"매크로 오류: {ex.Message}");
+        }
+        finally
+        {
+            // 버튼을 다시 "실행"으로 되돌린다.
+            macroWindow.EndRun();
         }
     }
 
