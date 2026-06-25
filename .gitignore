@@ -1,16 +1,13 @@
-# IDE
-.idea/
-.vs/
-.vscode/
-
-# Build
+# Build results
 bin/
 obj/
 *.dll
 *.exe
+*.pdb
 
-# User-specific
-*.suo
+# IDE
+.idea/
+.vscode/
 *.user
 *.userprefs
 *.sln.iml
@@ -18,3 +15,6 @@ obj/
 # OS
 .DS_Store
 Thumbs.db
+
+# Rider
+*.sln.iml

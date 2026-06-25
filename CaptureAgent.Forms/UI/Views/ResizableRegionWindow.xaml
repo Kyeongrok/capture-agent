@@ -1,0 +1,69 @@
+﻿<Window
+    x:Class="CaptureAgent.Forms.UI.Views.ResizableRegionWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    AllowsTransparency="True"
+    Background="Transparent"
+    Topmost="True"
+    WindowStyle="None">
+    <Grid>
+        <Canvas x:Name="RegionCanvas" Background="Transparent">
+            <Border
+                x:Name="RegionFrame"
+                Background="Transparent"
+                BorderBrush="#4CAF50"
+                BorderThickness="2" />
+            <Border
+                x:Name="ControlBar"
+                Padding="8,2"
+                Background="#2D2D30"
+                BorderBrush="#4CAF50"
+                BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock
+                        x:Name="DimensionDisplay"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="#E0E0E0"
+                        Text="0x0" />
+                    <Separator
+                        Width="1"
+                        Margin="8,0"
+                        Background="#555" />
+                    <TextBlock
+                        x:Name="FilePathDisplay"
+                        Margin="8,0"
+                        VerticalAlignment="Center"
+                        FontSize="11"
+                        Foreground="#B0B0B0"
+                        Text="저장 대기 중..."
+                        TextTrimming="CharacterEllipsis" />
+                    <Separator
+                        Width="1"
+                        Margin="8,0"
+                        Background="#555" />
+                    <Button
+                        Width="28"
+                        Height="28"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="#E0E0E0"
+                        ToolTip="캡춰">
+                        <TextBlock FontSize="14" Text="📸" />
+                    </Button>
+                    <Button
+                        Width="28"
+                        Height="28"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="#E0E0E0"
+                        ToolTip="닫기">
+                        <TextBlock FontSize="14" Text="✕" />
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Canvas>
+    </Grid>
+</Window>

@@ -8,7 +8,17 @@
     WindowState="Maximized"
     WindowStyle="None">
     <Grid>
-        <Border Background="#3E080906" />
-        <Canvas x:Name="SelectionCanvas" Background="Transparent" />
+        <Border Background="#4D000000" />
+        <Canvas x:Name="SelectionCanvas" Background="Transparent">
+            <TextBlock
+                x:Name="DimensionText"
+                Padding="6,4"
+                Background="#80000000"
+                FontSize="14"
+                FontWeight="Bold"
+                Foreground="White"
+                Text="0x0"
+                Visibility="Hidden" />
+        </Canvas>
     </Grid>
 </Window>

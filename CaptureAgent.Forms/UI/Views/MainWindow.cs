@@ -16,6 +16,29 @@ public class MainWindow : CaptureAgentWindow
     public MainWindow(MainWindowViewModel viewModel)
     {
         DataContext = viewModel;
+        Closing += (s, e) => CloseAllOtherWindows();
+
+        // 앱 아이콘 설정
+        try
+        {
+            Icon = new System.Windows.Media.Imaging.BitmapImage(
+                new System.Uri("pack://application:,,,/CaptureAgent;component/../../../CaptureAgent/App.ico.png"));
+        }
+        catch { /* 아이콘 로드 실패 무시 */ }
+    }
+
+    private void CloseAllOtherWindows()
+    {
+        // 메인 윈도우를 제외한 모든 윈도우 닫기
+        var windowsToClose = Application.Current.Windows
+            .Cast<Window>()
+            .Where(w => w != this)
+            .ToList();
+
+        foreach (var window in windowsToClose)
+        {
+            window.Close();
+        }
     }
 
     public override void OnApplyTemplate()
