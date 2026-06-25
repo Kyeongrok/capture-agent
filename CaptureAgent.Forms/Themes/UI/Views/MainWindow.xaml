@@ -17,12 +17,12 @@
         <Setter Property="Padding" Value="0,0,6,0" />
     </Style>
 
+    <!--
+        창 크기(Width/Height/MinWidth/MinHeight)는 Window에서 Style Setter로 적용되지 않으므로
+        MainWindow 생성자에서 로컬 값으로 설정한다.
+    -->
     <Style BasedOn="{StaticResource {x:Type support:CaptureAgentWindow}}" TargetType="{x:Type views:MainWindow}">
         <Setter Property="Title" Value="캡춰앱" />
-        <Setter Property="Width" Value="700" />
-        <Setter Property="Height" Value="400" />
-        <Setter Property="MinWidth" Value="700" />
-        <Setter Property="MinHeight" Value="400" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="Content">
             <Setter.Value>
@@ -233,18 +233,6 @@
                                         Foreground="#F2A33C"
                                         Text="매크로" />
                                 </StackPanel>
-                            </Button>
-                            <Button
-                                Width="100"
-                                Height="100"
-                                Padding="0"
-                                Background="Transparent"
-                                BorderBrush="#F2A33C"
-                                BorderThickness="3">
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontSize="36"
-                                    Text="🎯" />
                             </Button>
                         </StackPanel>
                     </Grid>

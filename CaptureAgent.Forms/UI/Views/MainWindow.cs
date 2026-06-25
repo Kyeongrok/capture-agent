@@ -16,6 +16,13 @@ public class MainWindow : CaptureAgentWindow
     public MainWindow(MainWindowViewModel viewModel)
     {
         DataContext = viewModel;
+
+        // Window의 Width/Height는 Style Setter로 적용되지 않으므로 로컬 값으로 설정한다.
+        Width = 700;
+        Height = 400;
+        MinWidth = 700;
+        MinHeight = 400;
+
         Closing += (s, e) => CloseAllOtherWindows();
 
         // 앱 아이콘 설정
