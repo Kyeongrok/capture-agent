@@ -4,10 +4,19 @@
   <description>Screen Capture Application</description>
 
   <!-- DPI Awareness 설정 (고해상도 디스플레이 지원) -->
+  <!--
+    중요: PerMonitorV2 는 <dpiAwareness>(2016 스키마)로만 설정할 수 있다.
+    <dpiAware>(2005 스키마)에 "PerMonitorV2,PerMonitor" 를 넣으면 Windows 가
+    "인식할 수 없는 문자열"로 처리해 프로세스가 DPI Unaware 가 된다. 그러면
+    200% 모니터에서 화면이 1920x1080 으로 가상화되어 캡처가 절반 크기로 저장된다.
+    - <dpiAwareness>: Windows 10 1607+ 용. PerMonitorV2 우선, 미지원 시 PerMonitor 로 폴백.
+    - <dpiAware>:     구버전 Windows 폴백용. true/PM = Per-Monitor(8.1), System aware(7/8).
+    Win10 1607+ 에서는 <dpiAwareness> 가 존재하면 <dpiAware> 는 무시된다.
+  -->
   <asmv3:application xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
-    <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
-      <!-- Per-Monitor DPI Awareness v2 (권장) -->
-      <dpiAware>PerMonitorV2,PerMonitor</dpiAware>
+    <asmv3:windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2,PerMonitor</dpiAwareness>
     </asmv3:windowsSettings>
   </asmv3:application>
 
