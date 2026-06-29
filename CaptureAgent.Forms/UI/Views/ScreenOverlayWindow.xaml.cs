@@ -12,6 +12,7 @@ public partial class ScreenOverlayWindow : Window
 {
     private Rectangle? _selectionRectangle;
     private TextBlock? _dimensionText;
+    private Canvas? _selectionCanvas;
     private Point _startPoint;
     private bool _isSelecting;
 
@@ -32,7 +33,8 @@ public partial class ScreenOverlayWindow : Window
     private void SetupSelection()
     {
         _dimensionText = FindName("DimensionText") as TextBlock;
-        var canvas = FindName("SelectionCanvas") as Canvas;
+        _selectionCanvas = FindName("SelectionCanvas") as Canvas;
+        var canvas = _selectionCanvas;
         if (canvas == null) return;
 
         _selectionRectangle = new Rectangle
@@ -49,7 +51,8 @@ public partial class ScreenOverlayWindow : Window
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
         base.OnMouseDown(e);
-        _startPoint = Mouse.GetPosition(null);
+        // 선택 캔버스 기준 좌표(DIP)로 시작점을 기록한다.
+        _startPoint = e.GetPosition(_selectionCanvas);
         _isSelecting = true;
     }
 
@@ -60,17 +63,18 @@ public partial class ScreenOverlayWindow : Window
         if (!_isSelecting || _selectionRectangle == null)
             return;
 
-        var currentPoint = Mouse.GetPosition(null);
+        var currentPoint = e.GetPosition(_selectionCanvas);
 
         double x = Math.Min(_startPoint.X, currentPoint.X);
         double y = Math.Min(_startPoint.Y, currentPoint.Y);
         double width = Math.Abs(currentPoint.X - _startPoint.X);
         double height = Math.Abs(currentPoint.Y - _startPoint.Y);
 
-        // Window 기준 좌표로 변환
-        Point windowPos = PointFromScreen(new Point(x, y));
-        Canvas.SetLeft(_selectionRectangle, windowPos.X);
-        Canvas.SetTop(_selectionRectangle, windowPos.Y);
+        // 좌표는 이미 캔버스 기준 DIP 이므로 그대로 배치한다.
+        // (PointFromScreen 으로 변환하면 고DPI 에서 좌표가 1/배율 로 줄어
+        //  사각형이 마우스를 따라오지 못한다 — 기존 버그의 원인.)
+        Canvas.SetLeft(_selectionRectangle, x);
+        Canvas.SetTop(_selectionRectangle, y);
         _selectionRectangle.Width = width;
         _selectionRectangle.Height = height;
         _selectionRectangle.Visibility = Visibility.Visible;
