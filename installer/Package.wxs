@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <!--
+    MSI 정의. CaptureAgent는 self-contained single-file exe 하나로 발행되므로
+    설치 파일은 그 exe 하나 + 시작 메뉴/바탕화면 단축아이콘 + 제거 항목만 담는다.
+    Version / ExeSource / IconSource 는 빌드 시 -d 인자로 주입된다.
+  -->
+  <Package Name="CaptureAgent"
+           Manufacturer="E3View"
+           Version="$(var.Version)"
+           UpgradeCode="0162A00E-31B5-48BD-8E8D-0790656F24EF"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="이미 더 높은 버전의 CaptureAgent가 설치되어 있습니다." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.IconSource)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="CaptureAgent">
+        <Component Id="MainExe" Guid="*">
+          <File Id="CaptureAgentExe" Name="CaptureAgent.exe" Source="$(var.ExeSource)" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="StartMenuAppShortcut"
+                  Name="CaptureAgent"
+                  Target="[INSTALLFOLDER]CaptureAgent.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\E3View\CaptureAgent" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="*">
+        <Shortcut Id="DesktopAppShortcut"
+                  Name="CaptureAgent"
+                  Target="[INSTALLFOLDER]CaptureAgent.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\E3View\CaptureAgent" Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="CaptureAgent" Level="1">
+      <ComponentRef Id="MainExe" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+  </Package>
+</Wix>

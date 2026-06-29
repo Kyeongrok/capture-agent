@@ -1,0 +1,68 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 릴리스 생성/업로드에 필요
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Set version
+        id: ver
+        shell: pwsh
+        run: |
+          $version = "1.0.${{ github.run_number }}"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "Building version $version"
+
+      - name: Publish portable single-file exe
+        shell: pwsh
+        run: |
+          dotnet publish CaptureAgent/CaptureAgent.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:Version=${{ steps.ver.outputs.version }} `
+            -o publish
+
+      - name: Stage portable artifact
+        shell: pwsh
+        run: Copy-Item publish/CaptureAgent.exe "CaptureAgent-${{ steps.ver.outputs.version }}-portable.exe"
+
+      - name: Install WiX
+        run: dotnet tool install --global wix --version 5.*
+
+      - name: Build MSI installer
+        shell: pwsh
+        run: |
+          wix build installer/Package.wxs `
+            -arch x64 `
+            -d Version=${{ steps.ver.outputs.version }} `
+            -d ExeSource=publish/CaptureAgent.exe `
+            -d IconSource=CaptureAgent/App.ico `
+            -o "CaptureAgent-${{ steps.ver.outputs.version }}-setup.msi"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: CaptureAgent v${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          files: |
+            CaptureAgent-${{ steps.ver.outputs.version }}-portable.exe
+            CaptureAgent-${{ steps.ver.outputs.version }}-setup.msi
